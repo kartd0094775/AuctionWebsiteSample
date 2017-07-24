@@ -8,6 +8,9 @@
 		$mode = 2;
 		setcookie("admin", $_COOKIE['admin'], date('U')+300);
 	}
+	if ($mode != 1) {
+		header("Location: index.php");
+	}
 	require("../php_dbinfo.php");
 	$database = "ch8";
 	$conn = new mysqli($servername, $username, $password);
@@ -16,7 +19,7 @@
 	}
 	$conn->query("SET NAMES 'utf8'");
 	$conn->select_db($database);
-	$result = $conn->query("SELECT * FROM product WHERE productNo=".$_GET['no']);
+	$result = $conn->query("SELECT * FROM transaction WHERE transactNo");
 	$row = $result->fetch_assoc();
 ?>
 
@@ -24,7 +27,7 @@
 <html lang="en">
 <head>
 	<meta charset="UTF-8">
-	<title>News View</title>
+	<title>Cart</title>
 </head>
 <link rel="stylesheet" type="text/css" href="../semantic/semantic.min.css">
 <script
@@ -63,55 +66,33 @@
 		echo "<a href=\"logout.php\" class=\"ui button\">登出</a>";
 	}
 ?>
-	<div class="ui center aligned segment">
-<?php 
-	if($mode == 2) {
-		echo "<a class=\"ui red button\" href=\"product_delete.php?no=".$_GET['no']."\">刪除商品</a>";
-		echo "<a class=\"ui green button\" href=\"product_edit.php?no=".$_GET['no']."\">編輯商品</a>";
-	} else if ($mode == 1) {
-		echo "<form action=\"cart_add.php?no=".$row['productNo']."\" method=\"POST\" class=\"ui form\">";
-	}
- ?>
-		<table class="ui table">
-			<thead>
-				<tr>
-					<th>商品：<?php echo "<h1>".$row['productName']."</h1>" ?></th>
-				</tr>
-			</thead>
-			<tbody>
-				<tr><td></td></tr>
-				<tr>
-					<td>圖片：<br><img <?php echo "src=\"getImage.php?no=".$row['productNo']."\"" ?> /></td>
-				</tr>
-				<tr>
-					<td>內容：<br><?php echo $row['productContent'] ?></td>
-				</tr>
-				<tr>
-					<td>價格：<br><?php echo $row['productPrice'] ?></td>
-				</tr>
-				<tr>
-					<td>庫存：<br><?php echo $row['productStock'] ?></td>
-				</tr>
-				<?php 
-					if ($mode == 1) {
-						echo "<tr><td><div class=\"field\"><p>數量：</p><input type=\"text\" name=\"number\" class=\"one wide field\" value=\"0\" required>";
 
-					}
-				 ?>
-			</tbody>
-		</table>
-		<?php 
-			if ($mode == 1) {
-				echo "<input type=\"submit\" name=\"submit\" value=\"加入購物車\" class=\"ui green button\">";
-				echo "<input type=\"hidden\" name=\"productNo\" value=\"".$_GET['no']."\">";
+<div class="ui grid">
+	<br><br>
+	<div class="sixteen wide column">
+		<h2 class="ui header">購物車</h2>
+	</div>
+	<?php 
+		$sql = "SELECT * FROM transaction WHERE memberID = \"" . $_COOKIE['username'] . "\"";
+		$result = $conn->query($sql);
+	
+		while ($row = $result->fetch_assoc()) {
+			$product_Rs = $conn->query("SELECT * FROM product WHERE productNo = \"" . $row['productNo'] . "\"");
+			$product_Row = $product_Rs->fetch_assoc();
+			if (isset($row)) {
+				echo "<form action=\"cart_delete.php\" method=\"POST\">";
+				echo "<div class=\"four wide column\">";
+				echo "<h5 class=\" ui header\"><a href=\"product_view.php?no=".$product_Row['productNo']."\">".$product_Row['productName']."</a>　數量： " . trim($row['number'], '0') . "</h5>";
+				echo "<img width=\"200\" heigh=\"100\" src=\"getImage.php?no=".$product_Row['productNo']."\">";
+				echo "<h5 class=\" ui header\"><input class=\"ui red button\" type=\"submit\" name=\"submit\" value=\"移出購物車\"></h5>";
+				echo "<input type=\"hidden\" name=\"no\" value=\"". $row['transactNo'] . "\">";
+				echo "</div></form>";
 			}
-		 ?>
-		<a href="product.php" class="ui button">回上一頁</a>
-		<?php 
-			if ($mode == 1) {
-				echo "</form>";
-			}
-		 ?>
+		}
+	 ?>
+</div>
+	<div class="ui center aligned segment">
+		<button class="ui green button">結帳</button>
 	</div>
 </body>
 </html>
